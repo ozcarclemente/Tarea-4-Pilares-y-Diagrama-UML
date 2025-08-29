@@ -1,0 +1,97 @@
+@startuml
+
+interface Notificador {
+    +enviar(mensaje: str)
+}
+
+class NotificadorEmail {
+    -_destinatario: str
+    +__init__(destinatario: str)
+    +enviar(mensaje: str)
+}
+
+class NotificadorWebhook {
+    -_url: str
+    +__init__(url: str)
+    +enviar(mensaje: str)
+}
+
+abstract class Sensor {
+    +id: str
+    +ventana: int {default = 5}
+    -_calibracion: float {default = 0.0}
+    -_buffer: list[float]
+    +leer(valor: float): None
+    +promedio: float
+    +en_alerta(): bool
+}
+
+class SensorTemperatura {
+    +umbral: float {default = 80.0}
+    +en_alerta(): bool
+}
+
+class SensorVibracion {
+    +rms_umbral: float {default = 2.5}
+    +en_alerta(): bool
+}
+
+class GestorAlertas {
+    -_sensores: List[Sensor]
+    -_notificadores: List[Notificador]
+    -_configuracion: Configuracion
+    -_fabrica: FabricaSensores
+    +__init__(sensores: List[Sensor], notificadores: List[Notificador], configuracion: Configuracion, fabrica: FabricaSensores)
+    +evaluar_y_notificar(): None
+    +generar_reporte(): str
+}
+
+' ==== Relaciones base ====
+Sensor <|-- SensorTemperatura
+Sensor <|-- SensorVibracion
+Notificador <|.. NotificadorEmail
+Notificador <|.. NotificadorWebhook
+GestorAlertas "1" o-- "1..*" Sensor
+GestorAlertas "1" o-- "1..*" Notificador
+
+
+' ========================================================
+' ==== ELEMENTOS EXTRA ====
+
+class SensorPresion {
+    +umbral_presion: float {default = 100.0}
+    +en_alerta(): bool
+}
+
+class NotificadorSMS {
+    -_numeroTelefono: str
+    +__init__(numeroTelefono: str)
+    +enviar(mensaje: str)
+}
+
+class Configuracion {
+    +parametros: dict
+    +__init__(parametros: dict)
+    +get(clave: str, default)
+    +set(clave: str, valor)
+    +mostrar(): None
+}
+
+class ReporteAlertas {
+    +eventos: list
+    +agregar_evento(evento: str): None
+    +gen_reporte(): str
+}
+
+class FabricaSensores {
+    +crear_sensor(tipo: str, id: str): Sensor
+}
+
+' ==== Relaciones extras ====
+Sensor <|-- SensorPresion
+Notificador <|.. NotificadorSMS
+GestorAlertas ..> Configuracion : depende de
+GestorAlertas --> ReporteAlertas : genera
+GestorAlertas ..> FabricaSensores : usa para crear sensores
+
+@enduml
